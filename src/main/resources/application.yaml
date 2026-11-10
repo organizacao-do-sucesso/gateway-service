@@ -42,6 +42,11 @@ spring:
               predicates:
                 - Path=/orders/**
 
+            - id: exchanges
+              uri: http://exchange:8000
+              predicates:
+                - Path=/exchanges/**
+
 logging:
   level:
     root: info
