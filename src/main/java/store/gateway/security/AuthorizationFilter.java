@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
+import store.auth.AuthContext;
 
 @Component
 public class AuthorizationFilter implements GlobalFilter {
@@ -24,6 +25,9 @@ public class AuthorizationFilter implements GlobalFilter {
 
     @Autowired
     private RouterValidator routerValidator;
+
+    @Autowired
+    private AuthorizationPolicy authorizationPolicy;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -51,17 +55,33 @@ public class AuthorizationFilter implements GlobalFilter {
             .uri(AUTH_SERVICE_TOKEN_SOLVE)
             .bodyValue(Map.of("token", jwt))
             .retrieve()
-            .toEntity(Map.class)
+            .toEntity(AuthContext.class)
             .flatMap(response -> {
                 if (response != null && response.hasBody() && response.getBody() != null) {
-                    final Map<String, String> map = response.getBody();
-                    String idAccount = map.get("idAccount");
-                    ServerWebExchange authorized = updateRequest(exchange, idAccount, jwt);
+                    AuthContext authContext = response.getBody();
+                    authorize(exchange.getRequest(), authContext);
+                    ServerWebExchange authorized = updateRequest(
+                        exchange,
+                        authContext.idAccount(),
+                        jwt
+                    );
                     return chain.filter(authorized);
                 } else {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token");
                 }
             });
+    }
+
+    private void authorize(ServerHttpRequest request, AuthContext authContext) {
+        authorizationPolicy.requiredPermission(request).ifPresent(required -> {
+            if (authContext.permissions() == null
+                    || !authContext.permissions().contains(required)) {
+                throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Missing permission: " + required
+                );
+            }
+        });
     }
 
     private ServerWebExchange updateRequest(ServerWebExchange exchange, String idAccount, String jwt) {
