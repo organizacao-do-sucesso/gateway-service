@@ -12,7 +12,9 @@ public class RouterValidator {
     private List<String> openApiEndpoints = List.of(
             "POST /auth/register",
             "GET /auth/logout",
-            "POST /auth/login");
+            "POST /auth/login",
+            // Grafana has its own login; the store JWT must not be forwarded to it
+            "ANY /grafana/**");
 
     public Predicate<ServerHttpRequest> isSecured = request -> openApiEndpoints
             .stream()

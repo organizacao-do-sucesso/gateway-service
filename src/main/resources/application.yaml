@@ -47,6 +47,17 @@ spring:
               predicates:
                 - Path=/exchanges/**
 
+            # observability (organizacao-do-sucesso/observability), served under these sub-paths
+            - id: grafana
+              uri: http://grafana:3000
+              predicates:
+                - Path=/grafana/**
+
+            - id: prometheus
+              uri: http://prometheus:9090
+              predicates:
+                - Path=/prometheus/**
+
 logging:
   level:
     root: info
