@@ -52,6 +52,8 @@ spring:
               uri: http://grafana:3000
               predicates:
                 - Path=/grafana/**
+              filters:
+                - PreserveHostHeader
 
             - id: prometheus
               uri: http://prometheus:9090
