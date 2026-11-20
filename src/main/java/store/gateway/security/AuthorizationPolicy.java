@@ -32,6 +32,16 @@ public class AuthorizationPolicy {
         rule(HttpMethod.POST, "/accounts/{id}/roles", ACCOUNT_ADMIN)
     );
 
+    // routes restricted to the administrator role, whatever the method
+    private final List<PathPattern> administratorOnly = List.of(
+        PathPatternParser.defaultInstance.parse("/prometheus/**")
+    );
+
+    public boolean requiresAdministrator(ServerHttpRequest request) {
+        PathContainer path = PathContainer.parsePath(request.getURI().getPath());
+        return administratorOnly.stream().anyMatch(pattern -> pattern.matches(path));
+    }
+
     public Optional<String> requiredPermission(ServerHttpRequest request) {
         PathContainer path = PathContainer.parsePath(request.getURI().getPath());
         return rules.stream()

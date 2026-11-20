@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 
 import reactor.core.publisher.Mono;
+import store.account.Role;
 import store.auth.AuthContext;
 
 @Component
@@ -73,6 +74,13 @@ public class AuthorizationFilter implements GlobalFilter {
     }
 
     private void authorize(ServerHttpRequest request, AuthContext authContext) {
+        if (authorizationPolicy.requiresAdministrator(request)
+                && !Role.ADMINISTRATOR.value().equals(authContext.role())) {
+            throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "Administrator role required"
+            );
+        }
         authorizationPolicy.requiredPermission(request).ifPresent(required -> {
             if (authContext.permissions() == null
                     || !authContext.permissions().contains(required)) {
